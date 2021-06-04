@@ -107,10 +107,11 @@ def send():
     data = request.json  # JSON -> dict
     username = data['username']
     text = data['text']
-    if username != ZBX_USERNAME:
+    if username == ZBX_USERNAME:
+        message.update({'text': text, 'time': datetime.now()})
+        return {"ok": True}
+    else:
         return {"ok": False}
-    message.update({'text': text, 'time': datetime.now()})
-    return {"ok": True}
 
 
 port = int(os.environ.get("PORT", 5000))
