@@ -15,21 +15,21 @@ STATUS_PATH = os.environ['STATUS_PATH']
 psycopg2.connect(DATABASE_URL)
 connection = psycopg2.connect(DATABASE_URL, sslmode='require')
 update_post_zbx_mon_alert = """
-UPDATE
-  zbx_mon
-SET
-  send_state = '1'
-WHERE
-  id = 1
-"""
+    UPDATE
+        zbx_mon
+    SET
+        send_state = '1'
+    WHERE
+        id = 1
+    """
 update_post_zbx_mon_ok = """
-UPDATE
-  zbx_mon
-SET
-  send_state = '0'
-WHERE
-  id = 1
-"""
+    UPDATE
+        zbx_mon
+    SET
+        send_state = '0'
+    WHERE
+        id = 1
+    """
 select_zbx_mon = "SELECT send_state FROM zbx_mon WHERE id=1"
 
 app = Flask(__name__)
@@ -103,7 +103,7 @@ def status():
 
 
 @app.route(SND_PATH, methods=['POST'])
-def send():
+def receive_msg():
     data = request.json  # JSON -> dict
     username = data['username']
     text = data['text']
