@@ -58,13 +58,10 @@ def execute_read_query(connection, query):
 
 
 def check():
-    print("time now")
-    print(datetime.now())
-    print("time msg")
-    print(message.get('time'))
+    print(' '.join(["time now:", str(datetime.now()), "  ", "time msg:", str(message.get('time'))]))
     if datetime.now() - message.get('time') > timedelta(minutes=2):
         message.update({'text': 'not_ok'})
-        print(datetime.now() - message.get('time'))
+        print(' '.join(["not ok:", str(datetime.now() - message.get('time'))]))
 
 
 def report():
