@@ -12,6 +12,9 @@ TLG_CHAT_ID = os.environ['TLG_CHAT_ID']
 ZBX_USERNAME = os.environ['ZBX_USERNAME']
 SND_PATH = os.environ['SND_PATH']
 STATUS_PATH = os.environ['STATUS_PATH']
+MS_TEAMS_WEBHOOK = os.environ['MS_TEAMS_WEBHOOK']
+IMAGE_URL_FAIL = os.environ['IMAGE_URL_FAIL']
+IMAGE_URL_OK = os.environ['IMAGE_URL_OK']
 psycopg2.connect(DATABASE_URL)
 connection = psycopg2.connect(DATABASE_URL, sslmode='require')
 update_post_zbx_mon_alert = """
@@ -68,11 +71,15 @@ def report():
     if message.get('text') == 'not_ok' and (execute_read_query(connection, select_zbx_mon))[0][0] is False:
         message.update({'send': True})
         execute_query(connection, update_post_zbx_mon_alert)
+        requests.post(MS_TEAMS_WEBHOOK, data={'themeColor': 'ff0000', 'summary': 'Hello World!', 'sections':
+            [{'activityTitle': 'Zabbix замолчал!', 'activityImage': IMAGE_URL_FAIL}]})
         print("Report sent")
         return requests.post(TLG_LINK, data={"chat_id": TLG_CHAT_ID, "text": "Zabbix замолчал!"})
     if message.get('text') == 'all_ok' and (execute_read_query(connection, select_zbx_mon))[0][0] is True:
         message.update({'send': False})
         execute_query(connection, update_post_zbx_mon_ok)
+        requests.post(MS_TEAMS_WEBHOOK, data={'themeColor': '00ff00', 'summary': 'Hello World!', 'sections':
+            [{'activityTitle': 'Zabbix ожил!', 'activityImage': IMAGE_URL_OK}]})
         print("Alive sent")
         return requests.post(TLG_LINK, data={"chat_id": TLG_CHAT_ID, "text": "Zabbix ожил!"})
 
@@ -113,4 +120,3 @@ def receive_msg():
 
 port = int(os.environ.get("PORT", 5000))
 app.run(host="0.0.0.0", port=port)
-
