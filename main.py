@@ -71,7 +71,8 @@ def report():
     if message.get('text') == 'not_ok' and (execute_read_query(connection, select_zbx_mon))[0][0] is False:
         message.update({'send': True})
         execute_query(connection, update_post_zbx_mon_alert)
-        print(requests.post(MS_TEAMS_WEBHOOK, json={'themeColor': 'ff0000', 'summary': 'Zabbix', 'sections': [{'activityTitle': 'Zabbix замолчал!'}]}))
+        print(requests.post(MS_TEAMS_WEBHOOK, json={'themeColor': 'ff0000', 'summary': 'Zabbix', 'sections':
+            [{'activityTitle': 'Zabbix замолчал!', 'activityImage': IMAGE_URL_FAIL}]}))
         print("Report sent")
         return requests.post(TLG_LINK, data={"chat_id": TLG_CHAT_ID, "text": "Zabbix замолчал!"})
     if message.get('text') == 'all_ok' and (execute_read_query(connection, select_zbx_mon))[0][0] is True:
