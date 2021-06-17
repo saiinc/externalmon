@@ -74,13 +74,13 @@ def report():
         execute_query(connection, update_post_zbx_mon_alert)
         sender_msteams(True)
         print("Report sent")
-        return requests.post(TLG_LINK, data={"chat_id": TLG_CHAT_ID, "text": "Zabbix замолчал!"})
+        return sender_tlg(True)
     if message.get('text') == 'all_ok' and (execute_read_query(connection, select_zbx_mon))[0][0] is True:
         message.update({'send': False})
         execute_query(connection, update_post_zbx_mon_ok)
         sender_msteams(False)
         print("Alive sent")
-        return requests.post(TLG_LINK, data={"chat_id": TLG_CHAT_ID, "text": "Zabbix ожил!"})
+        return sender_tlg(False)
 
 
 def sender_msteams(state):
@@ -90,6 +90,13 @@ def sender_msteams(state):
     else:
         return requests.post(MS_TEAMS_WEBHOOK, json={'themeColor': '00ff00', 'summary': 'Zabbix', 'sections': [{
             'activityTitle': 'Zabbix ожил!', 'activityImage': IMAGE_URL_OK}]})
+
+
+def sender_tlg(state):
+    if state:
+        return requests.post(TLG_LINK, data={"chat_id": TLG_CHAT_ID, "text": "Zabbix замолчал!"})
+    else:
+        return requests.post(TLG_LINK, data={"chat_id": TLG_CHAT_ID, "text": "Zabbix ожил!"})
 
 
 scheduler = BackgroundScheduler()
