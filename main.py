@@ -72,31 +72,33 @@ def report():
     if message.get('text') == 'not_ok' and (execute_read_query(connection, select_zbx_mon))[0][0] is False:
         message.update({'send': True})
         execute_query(connection, update_post_zbx_mon_alert)
-        sender_msteams(True)
-        print("Report sent")
-        return sender_tlg(True)
+        return print(''.join(["Alert message send to Telegram ", sender_tlg(True),
+                               ", MS Teams ", sender_msteams(True)]))
     if message.get('text') == 'all_ok' and (execute_read_query(connection, select_zbx_mon))[0][0] is True:
         message.update({'send': False})
         execute_query(connection, update_post_zbx_mon_ok)
-        sender_msteams(False)
-        print("Alive sent")
-        return sender_tlg(False)
+        return print(''.join(["Alive message send to Telegram ", sender_tlg(False),
+                               ", MS Teams ", sender_msteams(False)]))
 
 
 def sender_msteams(state):
     if state:
-        return requests.post(MS_TEAMS_WEBHOOK, json={'themeColor': 'ff0000', 'summary': 'Zabbix', 'sections': [{
+        response = requests.post(MS_TEAMS_WEBHOOK, json={'themeColor': 'ff0000', 'summary': 'Zabbix', 'sections': [{
             'activityTitle': 'Zabbix замолчал!', 'activityImage': IMAGE_URL_FAIL}]})
+        return ''.join(["(response: ", str(response.status_code), " ", response.text, ')'])
     else:
-        return requests.post(MS_TEAMS_WEBHOOK, json={'themeColor': '00ff00', 'summary': 'Zabbix', 'sections': [{
+        response = requests.post(MS_TEAMS_WEBHOOK, json={'themeColor': '00ff00', 'summary': 'Zabbix', 'sections': [{
             'activityTitle': 'Zabbix ожил!', 'activityImage': IMAGE_URL_OK}]})
+        return ''.join(["(response: ", str(response.status_code), " ", response.text, ')'])
 
 
 def sender_tlg(state):
     if state:
-        return requests.post(TLG_LINK, data={"chat_id": TLG_CHAT_ID, "text": "Zabbix замолчал!"})
+        response = requests.post(TLG_LINK, data={"chat_id": TLG_CHAT_ID, "text": "Zabbix замолчал!"})
+        return ''.join(["(response: ", str(response.status_code), ')'])
     else:
-        return requests.post(TLG_LINK, data={"chat_id": TLG_CHAT_ID, "text": "Zabbix ожил!"})
+        response = requests.post(TLG_LINK, data={"chat_id": TLG_CHAT_ID, "text": "Zabbix ожил!"})
+        return ''.join(["(response: ", str(response.status_code), ')'])
 
 
 scheduler = BackgroundScheduler()
