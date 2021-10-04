@@ -36,7 +36,6 @@ update_post_zbx_mon_ok = """
 select_zbx_mon = "SELECT send_state FROM zbx_mon WHERE id=1"
 
 app = Flask(__name__)
-message = {'send': False, 'text': '', 'time': datetime.now()}
 
 
 def execute_query(connection, query):
@@ -60,6 +59,10 @@ def execute_read_query(connection, query):
         print(f"The error '{e}' occurred")
 
 
+table_state = execute_read_query(connection, select_zbx_mon)
+message = {'send': table_state[0][0], 'text': '', 'time': datetime.now()}
+
+
 def check():
     print(' '.join(["time now:", str(datetime.now()), "  ", "time msg:", str(message.get('time'))]))
     if datetime.now() - message.get('time') > timedelta(minutes=2):
@@ -68,17 +71,16 @@ def check():
 
 
 def report():
-
-    if message.get('text') == 'not_ok' and (execute_read_query(connection, select_zbx_mon))[0][0] is False:
+    if message.get('text') == 'not_ok' and message.get('send') is False:
         message.update({'send': True})
         execute_query(connection, update_post_zbx_mon_alert)
         return print(''.join(["Alert message send to Telegram ", sender_tlg(True),
-                               ", MS Teams ", sender_msteams(True)]))
-    if message.get('text') == 'all_ok' and (execute_read_query(connection, select_zbx_mon))[0][0] is True:
+                              ", MS Teams ", sender_msteams(True)]))
+    if message.get('text') == 'all_ok' and message.get('send') is True:
         message.update({'send': False})
         execute_query(connection, update_post_zbx_mon_ok)
         return print(''.join(["Alive message send to Telegram ", sender_tlg(False),
-                               ", MS Teams ", sender_msteams(False)]))
+                              ", MS Teams ", sender_msteams(False)]))
 
 
 def sender_msteams(state):
