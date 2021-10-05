@@ -59,8 +59,12 @@ def execute_read_query(connection, query):
         print(f"The error '{e}' occurred")
 
 
-table_state = execute_read_query(connection, select_zbx_mon)
-message = {'send': table_state[0][0], 'text': '', 'time': datetime.now()}
+def extract_state():
+    table_state = execute_read_query(connection, select_zbx_mon)
+    return table_state[0][0]
+
+
+message = {'alert': extract_state(), 'text': '', 'time': datetime.now()}
 
 
 def check():
@@ -71,13 +75,13 @@ def check():
 
 
 def report():
-    if message.get('text') == 'not_ok' and message.get('send') is False:
-        message.update({'send': True})
+    if message.get('text') == 'not_ok' and message.get('alert') is False:
+        message.update({'alert': True})
         execute_query(connection, update_post_zbx_mon_alert)
         return print(''.join(["Alert message send to Telegram ", sender_tlg(True),
                               ", MS Teams ", sender_msteams(True)]))
-    if message.get('text') == 'all_ok' and message.get('send') is True:
-        message.update({'send': False})
+    if message.get('text') == 'all_ok' and message.get('alert') is True:
+        message.update({'alert': False})
         execute_query(connection, update_post_zbx_mon_ok)
         return print(''.join(["Alive message send to Telegram ", sender_tlg(False),
                               ", MS Teams ", sender_msteams(False)]))
@@ -119,7 +123,7 @@ def status():
     msg_time = message.get('time')
     beauty_time = msg_time.strftime('%Y/%m/%d %H:%M:%S')
     return {
-        'send': message.get('send'),
+        'alert': message.get('alert'),
         'time': datetime.now().strftime('%Y/%m/%d %H:%M:%S'),
         'message': message['text'] + ' ' + beauty_time
     }
