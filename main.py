@@ -69,21 +69,18 @@ message = {'alert': extract_state(), 'text': '', 'time': datetime.now()}
 
 def check():
     print(' '.join(["time now:", str(datetime.now()), "  ", "time msg:", str(message.get('time'))]))
-    if datetime.now() - message.get('time') > timedelta(minutes=2):
-        message.update({'text': 'not_ok'})
-        print(' '.join(["not ok:", str(datetime.now() - message.get('time'))]))
-
-
-def report():
-    if message.get('text') == 'not_ok' and message.get('alert') is False:
-        message.update({'alert': True})
-        execute_query(connection, update_post_zbx_mon_alert)
-        return print(''.join(["Alert message send to Telegram ", sender_tlg(True),
+    if datetime.now() - message.get('time') > timedelta(minutes=3):
+        if message.get('alert') is False:
+            message.update({'alert': True})
+            print(' '.join(["not ok:", str(datetime.now() - message.get('time'))]))
+            execute_query(connection, update_post_zbx_mon_alert)
+            return print(''.join(["Alert message send to Telegram ", sender_tlg(True),
                               ", MS Teams ", sender_msteams(True)]))
-    if message.get('text') == 'all_ok' and message.get('alert') is True:
-        message.update({'alert': False})
-        execute_query(connection, update_post_zbx_mon_ok)
-        return print(''.join(["Alive message send to Telegram ", sender_tlg(False),
+    else:
+        if message.get('text') == 'all_ok' and message.get('alert') is True:
+            message.update({'alert': False})
+            execute_query(connection, update_post_zbx_mon_ok)
+            return print(''.join(["Alive message send to Telegram ", sender_tlg(False),
                               ", MS Teams ", sender_msteams(False)]))
 
 
@@ -108,7 +105,6 @@ def sender_tlg(state):
 
 
 scheduler = BackgroundScheduler()
-scheduler.add_job(report, 'interval', minutes=1)
 scheduler.add_job(check, 'interval', minutes=1)
 scheduler.start()
 
