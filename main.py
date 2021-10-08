@@ -76,6 +76,8 @@ def check():
             execute_query(connection, update_post_zbx_mon_alert)
             return print(''.join(["Alert message send to Telegram ", sender_tlg(True),
                               ", MS Teams ", sender_msteams(True)]))
+        else:
+            return print(' '.join(["not ok:", str(datetime.now() - message.get('time'))]))
     else:
         if message.get('text') == 'all_ok' and message.get('alert') is True:
             message.update({'alert': False})
