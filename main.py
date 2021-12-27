@@ -125,7 +125,7 @@ def status():
     return {
         'alert': message.get('alert'),
         'time': datetime.now().strftime('%Y/%m/%d %H:%M:%S'),
-        'ok_msg:': message['ok_msg'] + ' ' + beauty_time
+        'ok_msg:': message.get('ok_msg') + ' ' + beauty_time
     }
 
 
