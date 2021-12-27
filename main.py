@@ -64,26 +64,28 @@ def extract_state():
     return table_state[0][0]
 
 
-message = {'alert': extract_state(), 'text': '', 'time': datetime.now()}
+message = {'alert': extract_state(), 'zbx_msg': '', 'time': datetime.now()}
 
 
 def check():
-    print(' '.join(["time now:", str(datetime.now()), "  ", "time msg:", str(message.get('time'))]))
     if datetime.now() - message.get('time') > timedelta(minutes=3):
         if message.get('alert') is False:
             message.update({'alert': True})
-            print(' '.join(["not ok:", str(datetime.now() - message.get('time'))]))
+            print(' '.join(["Status Alert:", str(datetime.now() - message.get('time'))]))
             execute_query(connection, update_post_zbx_mon_alert)
             return print(''.join(["Alert message send to Telegram ", sender_tlg(True),
-                              ", MS Teams ", sender_msteams(True)]))
+                                  ", MS Teams ", sender_msteams(True)]))
         else:
-            return print(' '.join(["not ok:", str(datetime.now() - message.get('time'))]))
+            return print(' '.join(["Status Alert:", str(datetime.now() - message.get('time'))]))
     else:
-        if message.get('text') == 'all_ok' and message.get('alert') is True:
+        if message.get('zbx_msg') == 'all_ok' and message.get('alert') is True:
             message.update({'alert': False})
             execute_query(connection, update_post_zbx_mon_ok)
             return print(''.join(["Alive message send to Telegram ", sender_tlg(False),
-                              ", MS Teams ", sender_msteams(False)]))
+                                  ", MS Teams ", sender_msteams(False)]))
+        else:
+            return print(' '.join(["Status OK", "time now:", str(datetime.now()), "  ",
+                                   "time msg:", str(message.get('time'))]))
 
 
 def sender_msteams(state):
@@ -123,7 +125,7 @@ def status():
     return {
         'alert': message.get('alert'),
         'time': datetime.now().strftime('%Y/%m/%d %H:%M:%S'),
-        'message': message['text'] + ' ' + beauty_time
+        'message': message['zbx_msg'] + ' ' + beauty_time
     }
 
 
@@ -133,7 +135,7 @@ def receive_msg():
     username = data['username']
     text = data['text']
     if username == ZBX_USERNAME:
-        message.update({'text': text, 'time': datetime.now()})
+        message.update({'zbx_msg': text, 'time': datetime.now()})
         return {"ok": True}
     else:
         return {"ok": False}
