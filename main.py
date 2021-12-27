@@ -121,11 +121,11 @@ def hello():
 @app.route(STATUS_PATH)
 def status():
     msg_time = message.get('time')
-    beauty_time = msg_time.strftime('%Y/%m/%d %H:%M:%S')
     return {
         'alert': message.get('alert'),
-        'time': datetime.now().strftime('%Y/%m/%d %H:%M:%S'),
-        'ok_msg:': str(message.get('ok_msg')) + ' ' + beauty_time
+        'time_now': datetime.now().strftime('%Y/%m/%d %H:%M:%S'),
+        'ok_msg:': message.get('ok_msg'),
+        'time_msg': msg_time.strftime('%Y/%m/%d %H:%M:%S')
     }
 
 
