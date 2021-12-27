@@ -64,7 +64,7 @@ def extract_state():
     return table_state[0][0]
 
 
-message = {'alert': extract_state(), 'zbx_msg': '', 'time': datetime.now()}
+message = {'alert': extract_state(), 'ok_msg': False, 'time': datetime.now()}
 
 
 def check():
@@ -78,13 +78,13 @@ def check():
         else:
             return print(' '.join(["Status Alert:", str(datetime.now() - message.get('time'))]))
     else:
-        if message.get('zbx_msg') == 'all_ok' and message.get('alert') is True:
+        if message.get('ok_msg') is True and message.get('alert') is True:
             message.update({'alert': False})
             execute_query(connection, update_post_zbx_mon_ok)
             return print(''.join(["Alive message send to Telegram ", sender_tlg(False),
                                   ", MS Teams ", sender_msteams(False)]))
         else:
-            return print(' '.join(["Status OK", "time now:", str(datetime.now()), "  ",
+            return print(' '.join(["Status OK,", "time now:", str(datetime.now()), "  ",
                                    "time msg:", str(message.get('time'))]))
 
 
@@ -125,17 +125,15 @@ def status():
     return {
         'alert': message.get('alert'),
         'time': datetime.now().strftime('%Y/%m/%d %H:%M:%S'),
-        'message': message['zbx_msg'] + ' ' + beauty_time
+        'ok_msg:': message['ok_msg'] + ' ' + beauty_time
     }
 
 
 @app.route(SND_PATH, methods=['POST'])
 def receive_msg():
     data = request.json  # JSON -> dict
-    username = data['username']
-    text = data['text']
-    if username == ZBX_USERNAME:
-        message.update({'zbx_msg': text, 'time': datetime.now()})
+    if data['username'] == ZBX_USERNAME and data['text'] == 'all_ok':
+        message.update({'ok_msg': True, 'time': datetime.now()})
         return {"ok": True}
     else:
         return {"ok": False}
