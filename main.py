@@ -17,23 +17,9 @@ IMAGE_URL_FAIL = os.environ['IMAGE_URL_FAIL']
 IMAGE_URL_OK = os.environ['IMAGE_URL_OK']
 psycopg2.connect(DATABASE_URL)
 connection = psycopg2.connect(DATABASE_URL, sslmode='require')
-update_post_zbx_mon_alert = """
-    UPDATE
-        zbx_mon
-    SET
-        send_state = '1'
-    WHERE
-        id = 1
-    """
-update_post_zbx_mon_ok = """
-    UPDATE
-        zbx_mon
-    SET
-        send_state = '0'
-    WHERE
-        id = 1
-    """
-select_zbx_mon = "SELECT send_state FROM zbx_mon WHERE id=1"
+update_post_zbx_mon_alert = "UPDATE zbx_mon SET send_state = '1' WHERE id = "
+update_post_zbx_mon_ok = "UPDATE zbx_mon SET send_state = '0' WHERE id = "
+select_zbx_mon = "SELECT send_state FROM zbx_mon WHERE id = "
 
 app = Flask(__name__)
 
@@ -59,12 +45,12 @@ def execute_read_query(connection, query):
         print(f"The error '{e}' occurred")
 
 
-def extract_state():
-    table_state = execute_read_query(connection, select_zbx_mon)
-    return table_state[0][0]
+def extract_state(db_index):
+    table_state = execute_read_query(connection, select_zbx_mon + str(db_index + 1))
+    return table_state[db_index][0]
 
 
-message = {'alert': extract_state(), 'ok_msg': False, 'time': datetime.now()}
+message = {'alert': extract_state(0), 'ok_msg': False, 'time': datetime.now()}
 nodeList = [message]
 
 
@@ -77,7 +63,7 @@ def check(item_number):
         if nodeList[item_number]['alert'] is False:
             nodeList[item_number]['alert'] = True
             print(' '.join(["Status Alert:", str(datetime.now() - message.get('time'))]))
-            execute_query(connection, update_post_zbx_mon_alert)
+            execute_query(connection, update_post_zbx_mon_alert + str(item_number + 1))
             return print(''.join(["Alert message send to Telegram ", sender_tlg(True),
                                   ", MS Teams ", sender_msteams(True)]))
         else:
@@ -85,7 +71,7 @@ def check(item_number):
     else:
         if nodeList[item_number]['ok_msg'] is True and nodeList[item_number]['alert'] is True:
             nodeList[item_number]['alert'] = False
-            execute_query(connection, update_post_zbx_mon_ok)
+            execute_query(connection, update_post_zbx_mon_ok + str(item_number + 1))
             return print(''.join(["Alive message send to Telegram ", sender_tlg(False),
                                   ", MS Teams ", sender_msteams(False)]))
         else:
