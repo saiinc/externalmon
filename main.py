@@ -65,12 +65,17 @@ def extract_state():
 
 
 message = {'alert': extract_state(), 'ok_msg': False, 'time': datetime.now()}
+nodeList = [message]
 
 
-def check():
+def worker():
+    check(0)
+
+
+def check(item_number):
     if datetime.now() - message.get('time') > timedelta(minutes=3):
-        if message.get('alert') is False:
-            message.update({'alert': True})
+        if nodeList[item_number]['alert'] is False:
+            nodeList[item_number]['alert'] = True
             print(' '.join(["Status Alert:", str(datetime.now() - message.get('time'))]))
             execute_query(connection, update_post_zbx_mon_alert)
             return print(''.join(["Alert message send to Telegram ", sender_tlg(True),
@@ -78,8 +83,8 @@ def check():
         else:
             return print(' '.join(["Status Alert:", str(datetime.now() - message.get('time'))]))
     else:
-        if message.get('ok_msg') is True and message.get('alert') is True:
-            message.update({'alert': False})
+        if nodeList[item_number]['ok_msg'] is True and nodeList[item_number]['alert'] is True:
+            nodeList[item_number]['alert'] = False
             execute_query(connection, update_post_zbx_mon_ok)
             return print(''.join(["Alive message send to Telegram ", sender_tlg(False),
                                   ", MS Teams ", sender_msteams(False)]))
@@ -109,7 +114,7 @@ def sender_tlg(state):
 
 
 scheduler = BackgroundScheduler()
-scheduler.add_job(check, 'interval', minutes=1)
+scheduler.add_job(worker, 'interval', minutes=1)
 scheduler.start()
 
 
@@ -120,11 +125,11 @@ def hello():
 
 @app.route(STATUS_PATH)
 def status():
-    msg_time = message.get('time')
+    msg_time = nodeList[0]['time']
     return {
-        'alert': message.get('alert'),
+        'alert': nodeList[0]['alert'],
         'time_now': datetime.now().strftime('%Y/%m/%d %H:%M:%S'),
-        'ok_msg:': message.get('ok_msg'),
+        'ok_msg:': nodeList[0]['ok_msg'],
         'time_msg': msg_time.strftime('%Y/%m/%d %H:%M:%S')
     }
 
