@@ -50,8 +50,7 @@ def extract_state(db_index):
     return table_state[db_index][0]
 
 
-message = {'alert': extract_state(0), 'ok_msg': False, 'time': datetime.now()}
-nodeList = [message]
+nodeList = [{'alert': extract_state(0), 'ok_msg': False, 'time': datetime.now()}]
 
 
 def worker():
@@ -59,15 +58,15 @@ def worker():
 
 
 def check(item_number):
-    if datetime.now() - message.get('time') > timedelta(minutes=3):
+    if datetime.now() - nodeList[item_number]['time'] > timedelta(minutes=3):
         if nodeList[item_number]['alert'] is False:
             nodeList[item_number]['alert'] = True
-            print(' '.join(["Status Alert:", str(datetime.now() - message.get('time'))]))
+            print(' '.join(["Status Alert:", str(datetime.now() - nodeList[item_number]['time'])]))
             execute_query(connection, update_post_zbx_mon_alert + str(item_number + 1))
             return print(''.join(["Alert message send to Telegram ", sender_tlg(True),
                                   ", MS Teams ", sender_msteams(True)]))
         else:
-            return print(' '.join(["Status Alert:", str(datetime.now() - message.get('time'))]))
+            return print(' '.join(["Status Alert:", str(datetime.now() - nodeList[item_number]['time'])]))
     else:
         if nodeList[item_number]['ok_msg'] is True and nodeList[item_number]['alert'] is True:
             nodeList[item_number]['alert'] = False
@@ -76,7 +75,7 @@ def check(item_number):
                                   ", MS Teams ", sender_msteams(False)]))
         else:
             return print(' '.join(["Status OK,", "time now:", str(datetime.now()), "  ",
-                                   "time msg:", str(message.get('time'))]))
+                                   "time msg:", str(nodeList[item_number]['time'])]))
 
 
 def sender_msteams(state):
@@ -124,7 +123,8 @@ def status():
 def receive_msg():
     data = request.json  # JSON -> dict
     if data['username'] == ZBX_USERNAME and data['text'] == 'all_ok':
-        message.update({'ok_msg': True, 'time': datetime.now()})
+        nodeList[0]['ok_msg'] = True
+        nodeList[0]['time'] = datetime.now()
         return {"ok": True}
     else:
         return {"ok": False}
