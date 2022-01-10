@@ -54,28 +54,31 @@ nodeList = [{'alert': extract_state(0), 'ok_msg': False, 'time': datetime.now()}
 
 
 def worker():
-    check(0)
+    item_index = 0
+    for item in nodeList:
+        check(item, item_index)
+        item_index = item_index + 1
 
 
-def check(item_number):
-    if datetime.now() - nodeList[item_number]['time'] > timedelta(minutes=3):
-        if nodeList[item_number]['alert'] is False:
-            nodeList[item_number]['alert'] = True
-            print(' '.join(["Status Alert:", str(datetime.now() - nodeList[item_number]['time'])]))
-            execute_query(connection, update_post_zbx_mon_alert + str(item_number + 1))
+def check(message, index):
+    if datetime.now() - message.get('time') > timedelta(minutes=3):
+        if message.get('alert') is False:
+            message.update({'alert': True})
+            print(' '.join(["Status Alert:", str(datetime.now() - message.get('time'))]))
+            execute_query(connection, update_post_zbx_mon_alert + str(index + 1))
             return print(''.join(["Alert message send to Telegram ", sender_tlg(True),
                                   ", MS Teams ", sender_msteams(True)]))
         else:
-            return print(' '.join(["Status Alert:", str(datetime.now() - nodeList[item_number]['time'])]))
+            return print(' '.join(["Status Alert:", str(datetime.now() - message.get('time'))]))
     else:
-        if nodeList[item_number]['ok_msg'] is True and nodeList[item_number]['alert'] is True:
-            nodeList[item_number]['alert'] = False
-            execute_query(connection, update_post_zbx_mon_ok + str(item_number + 1))
+        if message.get('ok_msg') is True and message.get('alert') is True:
+            message.update({'alert': False})
+            execute_query(connection, update_post_zbx_mon_ok + str(index + 1))
             return print(''.join(["Alive message send to Telegram ", sender_tlg(False),
                                   ", MS Teams ", sender_msteams(False)]))
         else:
             return print(' '.join(["Status OK,", "time now:", str(datetime.now()), "  ",
-                                   "time msg:", str(nodeList[item_number]['time'])]))
+                                   "time msg:", str(message.get('time'))]))
 
 
 def sender_msteams(state):
