@@ -56,11 +56,11 @@ nodeList = [{'alert': extract_state(0), 'ok_msg': False, 'time': datetime.now()}
 def worker():
     item_index = 0
     for item in nodeList:
-        check(item, item_index)
+        state_checker(item, item_index)
         item_index = item_index + 1
 
 
-def check(message, index):
+def state_checker(message, index):
     if datetime.now() - message.get('time') > timedelta(minutes=3):
         if message.get('alert') is False:
             message.update({'alert': True})
