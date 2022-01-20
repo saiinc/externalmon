@@ -19,7 +19,6 @@ psycopg2.connect(DATABASE_URL)
 connection = psycopg2.connect(DATABASE_URL, sslmode='require')
 update_post_zbx_mon_alert = "UPDATE zbx_mon SET send_state = '1' WHERE id = "
 update_post_zbx_mon_ok = "UPDATE zbx_mon SET send_state = '0' WHERE id = "
-select_zbx_mon = "SELECT send_state FROM zbx_mon WHERE id = "
 
 app = Flask(__name__)
 
@@ -45,12 +44,23 @@ def execute_read_query(connection, query):
         print(f"The error '{e}' occurred")
 
 
-def extract_state(db_index):
-    table_state = execute_read_query(connection, select_zbx_mon + str(db_index + 1))
-    return table_state[db_index][0]
+def extract_value_from_db(row_id, col_name):
+    table_state = execute_read_query(connection, "SELECT " + col_name + " FROM zbx_mon WHERE id = " + str(row_id + 1))
+    return table_state[0][0]
 
 
-nodeList = [{'alert': extract_state(0), 'ok_msg': False, 'time': datetime.now()}]
+def get_count():
+    table_count = execute_read_query(connection, "SELECT count(*) FROM zbx_mon")
+    return table_count[0][0]
+
+
+nodeList = [{'alert': extract_value_from_db(0, 'send_state'), 'ok_msg': False, 'time': datetime.now()}]
+nodelist_temp = []
+for row in range(get_count()):
+    node_name = extract_value_from_db(row, 'node_name')
+    alert = extract_value_from_db(row, 'send_state')
+    node = {'node_name': node_name, 'alert': alert, 'ok_msg': False, 'time': datetime.now()}
+    nodelist_temp.append(node)
 
 
 def worker():
