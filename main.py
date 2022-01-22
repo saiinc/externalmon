@@ -54,13 +54,16 @@ def get_count():
     return table_count[0][0]
 
 
-nodeList = [{'alert': extract_value_from_db(0, 'send_state'), 'ok_msg': False, 'time': datetime.now()}]
-nodelist_temp = []
-for row in range(get_count()):
+def get_node(row):
     node_name = extract_value_from_db(row, 'node_name')
     alert = extract_value_from_db(row, 'send_state')
-    node = {'node_name': node_name, 'alert': alert, 'ok_msg': False, 'time': datetime.now()}
-    nodelist_temp.append(node)
+    return {'node_name': node_name, 'alert': alert, 'ok_msg': False, 'time': datetime.now()}
+
+
+nodeList = [{'alert': extract_value_from_db(0, 'send_state'), 'ok_msg': False, 'time': datetime.now()}]
+nodelist_temp = []
+for row_number in range(get_count()):
+    nodelist_temp.append(get_node(row_number))
 
 
 def worker():
