@@ -128,7 +128,7 @@ def sender_msteams(state):
 def sender_tlg(number, state):
     if state:
         response = requests.post("https://api.telegram.org/bot" + telegram_tokens[number]['token'] + "/sendMessage",
-                                 data={"chat_id": telegram_tokens[number]['chat_id'], "text": nodelist[number]['node_name'] + " ожил!"})
+                                 data={"chat_id": telegram_tokens[number]['chat_id'], "text": nodelist[number]['node_name'] + " замолчал!"})
         return ''.join(["(response: ", str(response.status_code), ')'])
     else:
         response = requests.post("https://api.telegram.org/bot" + telegram_tokens[number]['token'] + "/sendMessage",
