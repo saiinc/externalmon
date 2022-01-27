@@ -155,13 +155,10 @@ def status():
 @app.route(SND_PATH, methods=['POST'])
 def receive_msg():
     data = request.json  # JSON -> dict
-    if data['username'] == ZBX_USERNAME and data['text'] == 'all_ok':
-        nodelist[0]['ok_msg'] = True
-        nodelist[0]['time'] = datetime.now()
-        return {"ok": True}
-    elif data['username'] == 'home-test' and data['text'] == 'all_ok':
-        nodelist[1]['ok_msg'] = True
-        nodelist[1]['time'] = datetime.now()
+    index = next((i for i, item in enumerate(nodelist) if item['node_name'] == data['username']), None)
+    if index is not None and data['text'] == 'all_ok':
+        nodelist[index]['ok_msg'] = True
+        nodelist[index]['time'] = datetime.now()
         return {"ok": True}
     else:
         return {"ok": False}
