@@ -67,17 +67,12 @@ def get_tlg(row):
     return {'token': token, 'chat_id': chat_id}
 
 
-print(execute_read_query(connection, "SELECT * FROM zbx_mon"))
-print(execute_read_query(connection, "SELECT * FROM method_telegram"))
-'''nodeList = [{'alert': extract_value_from_db('zbx_mon', 0, 'send_state'), 'ok_msg': False, 'time': datetime.now()}]'''
 nodelist = []
 telegram_tokens = []
 for row_number in range(get_count('zbx_mon')):
     nodelist.append(get_row(row_number))
 for row_number in range(get_count('method_telegram')):
     telegram_tokens.append(get_tlg(row_number))
-print(nodelist)
-print(telegram_tokens)
 
 
 def worker():
