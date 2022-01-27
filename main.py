@@ -7,8 +7,6 @@ import psycopg2
 from psycopg2 import OperationalError
 
 DATABASE_URL = os.environ['DATABASE_URL']
-TLG_LINK = os.environ['TLG_LINK']
-TLG_CHAT_ID = os.environ['TLG_CHAT_ID']
 ZBX_USERNAME = os.environ['ZBX_USERNAME']
 SND_PATH = os.environ['SND_PATH']
 STATUS_PATH = os.environ['STATUS_PATH']
@@ -44,31 +42,47 @@ def execute_read_query(connection, query):
         print(f"The error '{e}' occurred")
 
 
-def extract_value_from_db(row_id, col_name):
-    table_state = execute_read_query(connection, "SELECT " + col_name + " FROM zbx_mon WHERE id = " + str(row_id + 1))
+def extract_value_from_db(table_name, row_id, col_name):
+    table_state = execute_read_query(connection, "SELECT " + col_name + " FROM " + table_name + " WHERE id = " + str(row_id + 1))
     return table_state[0][0]
 
 
-def get_count():
-    table_count = execute_read_query(connection, "SELECT count(*) FROM zbx_mon")
+def get_count(table_name):
+    table_count = execute_read_query(connection, "SELECT count(*) FROM " + table_name)
     return table_count[0][0]
 
 
-def get_node(row):
-    node_name = extract_value_from_db(row, 'node_name')
-    alert = extract_value_from_db(row, 'send_state')
-    return {'node_name': node_name, 'alert': alert, 'ok_msg': False, 'time': datetime.now()}
+def get_row(row):
+    node_name = extract_value_from_db('zbx_mon', row, 'node_name')
+    alert = extract_value_from_db('zbx_mon', row, 'send_state')
+    send_msteams = extract_value_from_db('zbx_mon', row, 'send_msteams')
+    send_telegram = extract_value_from_db('zbx_mon', row, 'send_telegram')
+    return {'node_name': node_name, 'alert': alert, 'ok_msg': False, 'time': datetime.now(),
+            'send_msteams': send_msteams, 'send_telegram': send_telegram}
 
 
-nodeList = [{'alert': extract_value_from_db(0, 'send_state'), 'ok_msg': False, 'time': datetime.now()}]
-nodelist_temp = []
-for row_number in range(get_count()):
-    nodelist_temp.append(get_node(row_number))
+def get_tlg(row):
+    token = extract_value_from_db('method_telegram', row, 'token')
+    chat_id = extract_value_from_db('method_telegram', row, 'chat_id')
+    return {'token': token, 'chat_id': chat_id}
+
+
+print(execute_read_query(connection, "SELECT * FROM zbx_mon"))
+print(execute_read_query(connection, "SELECT * FROM method_telegram"))
+'''nodeList = [{'alert': extract_value_from_db('zbx_mon', 0, 'send_state'), 'ok_msg': False, 'time': datetime.now()}]'''
+nodelist = []
+telegram_tokens = []
+for row_number in range(get_count('zbx_mon')):
+    nodelist.append(get_row(row_number))
+for row_number in range(get_count('method_telegram')):
+    telegram_tokens.append(get_tlg(row_number))
+print(nodelist)
+print(telegram_tokens)
 
 
 def worker():
     item_index = 0
-    for item in nodeList:
+    for item in nodelist:
         state_checker(item, item_index)
         item_index = item_index + 1
 
@@ -79,16 +93,22 @@ def state_checker(message, index):
             message.update({'alert': True})
             print(' '.join(["Status Alert:", str(datetime.now() - message.get('time'))]))
             execute_query(connection, update_post_zbx_mon_alert + str(index + 1))
-            return print(''.join(["Alert message send to Telegram ", sender_tlg(True),
-                                  ", MS Teams ", sender_msteams(True)]))
+            if message.get('send_msteams') is not None:
+                print(''.join(["Alert message send to MS Teams ", sender_msteams(True)]))
+            if message.get('send_telegram') is not None:
+                print(''.join(["Alert message send to Telegram ", sender_tlg(index, True)]))
+            return print('Status switched to Alert')
         else:
             return print(' '.join(["Status Alert:", str(datetime.now() - message.get('time'))]))
     else:
         if message.get('ok_msg') is True and message.get('alert') is True:
             message.update({'alert': False})
             execute_query(connection, update_post_zbx_mon_ok + str(index + 1))
-            return print(''.join(["Alive message send to Telegram ", sender_tlg(False),
-                                  ", MS Teams ", sender_msteams(False)]))
+            if message.get('send_msteams') is not None:
+                print(''.join(["Alive message send to MS Teams ", sender_msteams(False)]))
+            if message.get('send_telegram') is not None:
+                print(''.join(["Alive message send to Telegram ", sender_tlg(index, False)]))
+            return print('Status switched to OK')
         else:
             return print(' '.join(["Status OK,", "time now:", str(datetime.now()), "  ",
                                    "time msg:", str(message.get('time'))]))
@@ -105,12 +125,14 @@ def sender_msteams(state):
         return ''.join(["(response: ", str(response.status_code), " ", response.text, ')'])
 
 
-def sender_tlg(state):
+def sender_tlg(number, state):
     if state:
-        response = requests.post(TLG_LINK, data={"chat_id": TLG_CHAT_ID, "text": "Zabbix замолчал!"})
+        response = requests.post("https://api.telegram.org/bot" + telegram_tokens[number]['token'] + "/sendMessage",
+                                 data={"chat_id": telegram_tokens[number]['chat_id'], "text": nodelist[number]['node_name'] + " ожил!"})
         return ''.join(["(response: ", str(response.status_code), ')'])
     else:
-        response = requests.post(TLG_LINK, data={"chat_id": TLG_CHAT_ID, "text": "Zabbix ожил!"})
+        response = requests.post("https://api.telegram.org/bot" + telegram_tokens[number]['token'] + "/sendMessage",
+                                 data={"chat_id": telegram_tokens[number]['chat_id'], "text": nodelist[number]['node_name'] + " ожил!"})
         return ''.join(["(response: ", str(response.status_code), ')'])
 
 
@@ -126,11 +148,11 @@ def hello():
 
 @app.route(STATUS_PATH)
 def status():
-    msg_time = nodeList[0]['time']
+    msg_time = nodelist[0]['time']
     return {
-        'alert': nodeList[0]['alert'],
+        'alert': nodelist[0]['alert'],
         'time_now': datetime.now().strftime('%Y/%m/%d %H:%M:%S'),
-        'ok_msg:': nodeList[0]['ok_msg'],
+        'ok_msg:': nodelist[0]['ok_msg'],
         'time_msg': msg_time.strftime('%Y/%m/%d %H:%M:%S')
     }
 
@@ -139,8 +161,8 @@ def status():
 def receive_msg():
     data = request.json  # JSON -> dict
     if data['username'] == ZBX_USERNAME and data['text'] == 'all_ok':
-        nodeList[0]['ok_msg'] = True
-        nodeList[0]['time'] = datetime.now()
+        nodelist[0]['ok_msg'] = True
+        nodelist[0]['time'] = datetime.now()
         return {"ok": True}
     else:
         return {"ok": False}
