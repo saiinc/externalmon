@@ -159,6 +159,10 @@ def receive_msg():
         nodelist[0]['ok_msg'] = True
         nodelist[0]['time'] = datetime.now()
         return {"ok": True}
+    elif data['username'] == 'home-test' and data['text'] == 'all_ok':
+        nodelist[1]['ok_msg'] = True
+        nodelist[1]['time'] = datetime.now()
+        return {"ok": True}
     else:
         return {"ok": False}
 
