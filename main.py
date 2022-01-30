@@ -10,6 +10,7 @@ DATABASE_URL = os.environ['DATABASE_URL']
 ZBX_USERNAME = os.environ['ZBX_USERNAME']
 SND_PATH = os.environ['SND_PATH']
 STATUS_PATH = os.environ['STATUS_PATH']
+LOG_PATH = os.environ['LOG_PATH']
 MS_TEAMS_WEBHOOK = os.environ['MS_TEAMS_WEBHOOK']
 IMAGE_URL_FAIL = os.environ['IMAGE_URL_FAIL']
 IMAGE_URL_OK = os.environ['IMAGE_URL_OK']
@@ -26,8 +27,10 @@ def execute_query(connection, query):
     try:
         cursor.execute(query)
         connection.commit()
+        dblog.append(datetime.now().strftime('%Y/%m/%d %H:%M:%S') + ' ' + query + ', result: success')
         print("Query executed successfully")
     except OperationalError as e:
+        dblog.append(datetime.now().strftime('%Y/%m/%d %H:%M:%S') + ' ' + query + ', error: ' + str(e))
         print(f"The error '{e}' occurred")
 
 
@@ -37,8 +40,10 @@ def execute_read_query(connection, query):
     try:
         cursor.execute(query)
         result = cursor.fetchall()
+        dblog.append(datetime.now().strftime('%Y/%m/%d %H:%M:%S') + ' ' + query + ', result: success')
         return result
     except OperationalError as e:
+        dblog.append(datetime.now().strftime('%Y/%m/%d %H:%M:%S') + ' ' + query + ', error: ' + str(e))
         print(f"The error '{e}' occurred")
 
 
@@ -67,6 +72,7 @@ def get_tlg(row):
     return {'token': token, 'chat_id': chat_id}
 
 
+dblog = []
 nodelist = []
 telegram_tokens = []
 for row_number in range(get_count('zbx_mon')):
@@ -150,6 +156,12 @@ def status():
         'ok_msg:': nodelist[0]['ok_msg'],
         'time_msg': msg_time.strftime('%Y/%m/%d %H:%M:%S')
     }
+
+
+@app.route(LOG_PATH)
+def logs():
+    str_ = '<br>'.join(dblog)
+    return str_
 
 
 @app.route(SND_PATH, methods=['POST'])
