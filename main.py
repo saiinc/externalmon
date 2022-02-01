@@ -7,7 +7,6 @@ import psycopg2
 from psycopg2 import OperationalError
 
 DATABASE_URL = os.environ['DATABASE_URL']
-ZBX_USERNAME = os.environ['ZBX_USERNAME']
 SND_PATH = os.environ['SND_PATH']
 STATUS_PATH = os.environ['STATUS_PATH']
 LOG_PATH = os.environ['LOG_PATH']
@@ -151,15 +150,15 @@ def status():
 
 @app.route(LOG_PATH)
 def logs():
-    str_ = '<br>'.join(dblog)
-    return str_
+    logpage = '<br>'.join(dblog)
+    return logpage
 
 
 @app.route(SND_PATH, methods=['POST'])
 def receive_msg():
     data = request.json  # JSON -> dict
     index = next((i for i, item in enumerate(nodelist) if item['node_name'] == data['username']), None)
-    if index is not None and data['text'] == 'all_ok':
+    if index is not None and data['text'] == 'all_ok' and data['password'] == nodelist[index]['passphrase']:
         nodelist[index]['ok_msg'] = True
         nodelist[index]['time'] = datetime.now()
         return {"ok": True}
