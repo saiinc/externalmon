@@ -47,38 +47,29 @@ def execute_read_query(connection, query):
         print(f"The error '{e}' occurred")
 
 
-def extract_value_from_db(table_name, row_id, col_name):
-    table_state = execute_read_query(connection, "SELECT " + col_name + " FROM " + table_name + " WHERE id = " + str(row_id + 1))
-    return table_state[0][0]
+def get_tlg():
+    db_tlg = execute_read_query(connection, "SELECT token, chat_id FROM method_telegram ORDER BY id")
+    list_tlg = []
+    for row in range(len(db_tlg)):
+        dict_tlg = {'token': db_tlg[row][0], 'chat_id': db_tlg[row][1]}
+        list_tlg.append(dict_tlg)
+    return list_tlg
 
 
-def get_count(table_name):
-    table_count = execute_read_query(connection, "SELECT count(*) FROM " + table_name)
-    return table_count[0][0]
-
-
-def get_row(row):
-    node_name = extract_value_from_db('zbx_mon', row, 'node_name')
-    alert = extract_value_from_db('zbx_mon', row, 'send_state')
-    send_msteams = extract_value_from_db('zbx_mon', row, 'send_msteams')
-    send_telegram = extract_value_from_db('zbx_mon', row, 'send_telegram')
-    return {'node_name': node_name, 'alert': alert, 'ok_msg': False, 'time': datetime.now(),
-            'send_msteams': send_msteams, 'send_telegram': send_telegram}
-
-
-def get_tlg(row):
-    token = extract_value_from_db('method_telegram', row, 'token')
-    chat_id = extract_value_from_db('method_telegram', row, 'chat_id')
-    return {'token': token, 'chat_id': chat_id}
+def get_nodes():
+    db_nodes = execute_read_query(connection, "SELECT node_name, send_state, passphrase, send_msteams, send_telegram "
+                                              "FROM zbx_mon ORDER BY id")
+    list_nodes = []
+    for row in range(len(db_nodes)):
+        dict_node = {'node_name': db_nodes[row][0], 'alert': db_nodes[row][1], 'passphrase': db_nodes[row][2],
+                     'ok_msg': False, 'time': datetime.now(), 'send_msteams': db_nodes[row][3], 'send_telegram': db_nodes[row][4]}
+        list_nodes.append(dict_node)
+    return list_nodes
 
 
 dblog = []
-nodelist = []
-telegram_tokens = []
-for row_number in range(get_count('zbx_mon')):
-    nodelist.append(get_row(row_number))
-for row_number in range(get_count('method_telegram')):
-    telegram_tokens.append(get_tlg(row_number))
+nodelist = get_nodes()
+telegram_tokens = get_tlg()
 
 
 def worker():
