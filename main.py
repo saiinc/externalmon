@@ -87,7 +87,7 @@ def state_checker(message, index):
             if message.get('send_msteams') is not None:
                 print(''.join(["Alert message send to MS Teams ", sender_msteams(True)]))
             if message.get('send_telegram') is not None:
-                print(''.join(["Alert message send to Telegram ", sender_tlg(message.get('send_telegram'), True)]))
+                print(''.join(["Alert message send to Telegram ", sender_tlg(message.get('send_telegram') - 1, True)]))
             return print('Status ' + message.get('node_name') + ' switched to Alert')
         else:
             return print(' '.join(['Status ' + message.get('node_name') + ' is Alert:', str(datetime.now() - message.get('time'))]))
@@ -98,7 +98,7 @@ def state_checker(message, index):
             if message.get('send_msteams') is not None:
                 print(''.join(["Alive message send to MS Teams ", sender_msteams(False)]))
             if message.get('send_telegram') is not None:
-                print(''.join(["Alive message send to Telegram ", sender_tlg(message.get('send_telegram'), False)]))
+                print(''.join(["Alive message send to Telegram ", sender_tlg(message.get('send_telegram') - 1, False)]))
             return print('Status ' + message.get('node_name') + ' switched to OK')
         else:
             return print(' '.join(['Status ' + message.get('node_name') + ' is OK,', "time now:", str(datetime.now()), "  ",
