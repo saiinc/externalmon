@@ -57,7 +57,7 @@ def get_tlg():
 
 def get_nodes():
     db_nodes = execute_read_query(connection, "SELECT node_name, send_state, passphrase, send_msteams, send_telegram "
-                                              "FROM zbx_mon ORDER BY id")
+                                              "FROM zbx_mon ORDER BY node_number")
     list_nodes = []
     for row in range(len(db_nodes)):
         dict_node = {'node_name': db_nodes[row][0], 'alert': db_nodes[row][1], 'passphrase': db_nodes[row][2],
