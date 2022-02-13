@@ -21,11 +21,11 @@ update_post_zbx_mon_ok = "UPDATE zbx_mon SET send_state = '0' WHERE node_number 
 app = Flask(__name__)
 
 
-def execute_query(connection, query):
-    cursor = connection.cursor()
+def execute_query(connection_db, query):
+    cursor = connection_db.cursor()
     try:
         cursor.execute(query)
-        connection.commit()
+        connection_db.commit()
         dblog.append(datetime.now().strftime('%Y/%m/%d %H:%M:%S') + ' ' + query + ', result: success')
         print("Query executed successfully")
     except OperationalError as e:
@@ -33,9 +33,8 @@ def execute_query(connection, query):
         print(f"The error '{e}' occurred")
 
 
-def execute_read_query(connection, query):
-    cursor = connection.cursor()
-    result = None
+def execute_read_query(connection_db, query):
+    cursor = connection_db.cursor()
     try:
         cursor.execute(query)
         result = cursor.fetchall()
@@ -79,6 +78,9 @@ def worker():
             item_index = item_index + 1
     except Exception as ex:
         dblog.append(datetime.now().strftime('%Y/%m/%d %H:%M:%S') + ' ' + str(ex))
+        requests.post("https://api.telegram.org/bot" + telegram_tokens[0]['token'] + "/sendMessage",
+                      data={"chat_id": telegram_tokens[1]['chat_id'],
+                            "text": " Проблема в главном цикле! " + str(ex)})
 
 
 def state_checker(message, index):
