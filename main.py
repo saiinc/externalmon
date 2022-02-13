@@ -15,8 +15,8 @@ IMAGE_URL_FAIL = os.environ['IMAGE_URL_FAIL']
 IMAGE_URL_OK = os.environ['IMAGE_URL_OK']
 psycopg2.connect(DATABASE_URL)
 connection = psycopg2.connect(DATABASE_URL, sslmode='require')
-update_post_zbx_mon_alert = "UPDATE zbx_mon SET send_state = '1' WHERE id = "
-update_post_zbx_mon_ok = "UPDATE zbx_mon SET send_state = '0' WHERE id = "
+update_post_zbx_mon_alert = "UPDATE zbx_mon SET send_state = '1' WHERE node_number = "
+update_post_zbx_mon_ok = "UPDATE zbx_mon SET send_state = '0' WHERE node_number = "
 
 app = Flask(__name__)
 
@@ -72,10 +72,13 @@ telegram_tokens = get_tlg()
 
 
 def worker():
-    item_index = 0
-    for item in nodelist:
-        state_checker(item, item_index)
-        item_index = item_index + 1
+    try:
+        item_index = 0
+        for item in nodelist:
+            state_checker(item, item_index)
+            item_index = item_index + 1
+    except Exception as ex:
+        dblog.append(datetime.now().strftime('%Y/%m/%d %H:%M:%S') + ' ' + str(ex))
 
 
 def state_checker(message, index):
