@@ -11,6 +11,7 @@ LOG_PATH = os.environ['LOG_PATH']
 TELEGRAM_TOKEN = os.environ['TELEGRAM_TOKEN']
 TLG_CHAT_ID = os.environ['TLG_CHAT_ID']
 PASSPHRASE = os.environ['PASSPHRASE']
+print(os.environ)
 
 app = Flask(__name__)
 
