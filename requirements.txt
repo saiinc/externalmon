@@ -1,4 +1,4 @@
-Flask==2.X.X
+Flask==2.1.1
 APScheduler~=3.0.0
 requests~=2.22.0
 psycopg2~=2.8.6
